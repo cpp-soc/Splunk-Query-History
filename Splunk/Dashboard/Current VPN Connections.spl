@@ -1,0 +1,19 @@
+index=netfw
+| eval gp_event=coalesce(eventid, event, signature, event_id)
+| search gp_event IN ("gateway-connected", "gateway-logout")
+| eval user=coalesce(user, src_user, srcuser)
+| eval gateway=coalesce(dest, dvc, serialnumber, portal)
+| eval session_id=coalesce(session_id, src_ip . "-" . gateway)
+| stats latest(_time) AS last_time
+        latest(gp_event) AS last_event
+        values(public_ip) AS public_ip
+        values(private_ip) AS private_ip
+        values(client_ver) AS client_ver
+        values(client_os) AS client_os
+        values(session_id) AS session_id
+  BY user, gateway, src_ip
+| where last_event="gateway-connected"
+| eval connected_for=tostring(now()-last_time, "duration"),
+       last_time=strftime(last_time, "%Y-%m-%d %H:%M:%S")
+| sort - last_time
+| table user, private_ip, public_ip, gateway, session_id, last_time, connected_for, client_ver, client_os
