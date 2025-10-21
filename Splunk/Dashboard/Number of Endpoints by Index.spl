@@ -1,0 +1,2 @@
+| tstats count where index=* by index
+| stats count as total_indexes
