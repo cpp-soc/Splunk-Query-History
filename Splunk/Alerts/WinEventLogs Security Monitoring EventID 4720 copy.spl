@@ -1,0 +1,11 @@
+WinEventLogs:Security Monitoring EventID: 4720 
+
+index=* source=WinEventLog:Security sourcetype=WinEventLog EventCode=4720
+| eval created_user=coalesce(New_Account_Account_Name, SAM_Account_Name, Account_Name, user, user_name)
+| eval created_domain=coalesce(New_Account_Domain, Account_Domain, dest_nt_domain, Subject_Account_Domain)
+| eval created_by=coalesce(Subject_Account_Name, src_user, src_user_name)
+| eval dc=coalesce(ComputerName, dvc_nt_host, dest_nt_host, dvc, host)
+| where isnotnull(created_user) AND NOT like(created_user, "%$")
+| eval time=strftime(_time, "%m/%d/%y %I:%M:%S:%p") 
+| table time created_user created_domain created_by dc
+| sort time

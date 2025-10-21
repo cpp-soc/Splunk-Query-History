@@ -1,0 +1,14 @@
+(Low) GlobalProtect VPN: Unusual Location Detected 
+
+index="netfw" portal IN ("gp-mgmt","gp-user") event_id="gateway-connected" src_user=*
+| iplocation src_ip
+| where isnotnull(lat) AND isnotnull(lon)
+| eval start_lat=lat, start_lon=lon, end_lat=34.0597, end_lon=-117.8200
+| eval pi=3.14159, earth_mi=3958.7613
+| eval rlat1=start_lat * pi / 180, rlon1=start_lon * pi / 180, rlat2=end_lat * pi / 180, rlon2=end_lon * pi / 180
+| eval dlat=rlat2 - rlat1, dlon=rlon2 - rlon1
+| eval a=pow(sin(dlat/2),2) + cos(rlat1) * cos(rlat2) * pow(sin(dlon/2),2)
+| eval c=2 * atan2(sqrt(a), sqrt(1 - a))
+| eval distance_miles=round(earth_mi * c, 2)
+| where distance_miles >= 30 AND distance_miles <= 50 AND Region="California"
+| stats count AS events earliest(_time) AS first_seen latest(_time) AS last_seen BY portal, src_user, src_ip, start_lat, start_lon, distance_miles

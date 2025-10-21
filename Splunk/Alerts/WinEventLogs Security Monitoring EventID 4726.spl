@@ -1,0 +1,11 @@
+WinEventLogs:Security Monitoring EventID: 4726 
+
+index=* source=WinEventLog:Security sourcetype=WinEventLog EventCode=4726
+| eval deleted_user=coalesce(Target_Account_Name, Account_Name, user, user_name)
+| eval deleted_domain=coalesce(Target_Account_Domain, Account_Domain, dest_nt_domain, Subject_Account_Domain, src_nt_domain)
+| eval deleted_by=coalesce(Subject_Account_Name, src_user, src_user_name)
+| eval dc=coalesce(ComputerName, dvc_nt_host, dest_nt_host, dvc)
+| where isnotnull(deleted_user) AND NOT like(deleted_user, "%$") 
+| eval time=strftime(_time, "%m/%d/%y %I:%M:%S:%p") 
+| table time deleted_user deleted_domain deleted_by dc
+| sort - time
