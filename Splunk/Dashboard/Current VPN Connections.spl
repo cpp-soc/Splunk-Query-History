@@ -11,9 +11,9 @@ index=netfw
         values(client_ver) AS client_ver
         values(client_os) AS client_os
         values(session_id) AS session_id
-  BY user, gateway, src_ip
+  BY user, portal, src_ip
 | where last_event="gateway-connected"
 | eval connected_for=tostring(now()-last_time, "duration"),
        last_time=strftime(last_time, "%Y-%m-%d %H:%M:%S")
 | sort - last_time
-| table user, private_ip, public_ip, gateway, session_id, last_time, connected_for, client_ver, client_os
+| table user, private_ip, public_ip, portal, session_id, last_time, connected_for, client_ver, client_os,
