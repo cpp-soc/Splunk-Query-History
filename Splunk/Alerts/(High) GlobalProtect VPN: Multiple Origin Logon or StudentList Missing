@@ -1,0 +1,30 @@
+(High) GlobalProtect VPN: Multiple Origin Logon or StudentList Missing
+
+index="netfw" portal IN ("gp-mgmt","gp-user") event_id="gateway-connected" earliest=-7d src_user=*
+| eval src_user_lc=lower(trim(src_user))
+| iplocation src_ip
+| eval region=coalesce(Region,"Unknown"), country=coalesce(Country,"Unknown")
+| eval known_region=if(region!="Unknown",1,0)
+| eval outside_USA_known=if(country!="Unknown" AND country!="United States",1,0)
+| stats earliest(_time) AS first_seen latest(_time) AS last_seen values(portal) AS portals values(src_ip) AS src_ips
+        values(eval(if(known_region=1,region,null()))) AS regions
+        dc(eval(if(known_region=1,region,null()))) AS dc_regions
+        values(eval(if(country!="Unknown",country,null()))) AS countries
+        max(outside_USA_known) AS any_outside_USA
+  BY src_user_lc
+| join type=left src_user_lc [
+    | inputlookup StudentList2.csv
+    | eval src_user_lc=lower(trim(mvindex(split(Email,"@"),0)))
+    | eval on_list=1
+    | fields src_user_lc on_list
+  ]
+| eval on_list=coalesce(on_list,0)
+| eval condA=if(on_list=0 AND any_outside_USA=1,1,0)
+| eval condB=if(on_list=1 AND dc_regions>1,1,0)
+| where condA=1 OR condB=1
+| eval
+       reason=case(
+         condA=1,"Not on studentlist AND seen outside USA",
+         condB=1,"On studentlist AND multiple region origins in 7 days"
+       )
+| table reason src_user_lc first_seen last_seen countries regions dc_regions src_ips portals
