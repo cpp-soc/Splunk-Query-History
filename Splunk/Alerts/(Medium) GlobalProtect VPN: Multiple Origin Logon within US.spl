@@ -1,0 +1,16 @@
+(Medium) GlobalProtect VPN: Multiple Origin Logon within US
+
+index="netfw" portal IN ("gp-mgmt","gp-user") event_id="gateway-connected" src_user=* earliest=-7d
+| eval src_user=lower(trim(src_user))
+| iplocation src_ip
+| eval region=coalesce(Region,"Unknown"), known_geo=if(region!="Unknown",1,0)
+| stats earliest(_time) AS first_seen
+        latest(_time)   AS last_seen
+        values(portal)  AS portals
+        values(src_ip)  AS src_ips
+        values(eval(if(known_geo=1,region,null()))) AS regions
+        dc(eval(if(known_geo=1,region,null())))     AS dc_regions
+  BY src_user
+| where dc_regions>1
+| eval reason="Multiple region origins in 7 days"
+| table reason src_user first_seen last_seen regions dc_regions src_ips portals
