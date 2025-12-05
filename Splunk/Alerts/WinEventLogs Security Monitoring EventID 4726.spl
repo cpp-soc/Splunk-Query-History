@@ -1,5 +1,3 @@
-WinEventLogs:Security Monitoring EventID: 4726 
-
 index=* source=WinEventLog:Security sourcetype=WinEventLog EventCode=4726
 | eval deleted_user=coalesce(Target_Account_Name, Account_Name, user, user_name)
 | eval deleted_domain=coalesce(Target_Account_Domain, Account_Domain, dest_nt_domain, Subject_Account_Domain, src_nt_domain)

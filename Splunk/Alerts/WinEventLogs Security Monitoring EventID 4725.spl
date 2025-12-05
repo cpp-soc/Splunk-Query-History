@@ -1,0 +1,9 @@
+index=* source=WinEventLog:Security sourcetype=WinEventLog EventCode=4725
+| eval disabled_user=coalesce(Target_Account_Name, Account_Name, user, user_name)
+| eval disabled_domain=coalesce(Target_Account_Domain, Account_Domain, dest_nt_domain, Subject_Account_Domain, src_nt_domain)
+| eval disabled_by=coalesce(Subject_Account_Name, src_user, src_user_name)
+| eval dc=coalesce(ComputerName, dvc_nt_host, dest_nt_host, dvc)
+| where isnotnull(disabled_user) AND NOT like(disabled_user, "%$") 
+| eval time=strftime(_time, "%m/%d/%y %I:%M:%S:%p") 
+| table time disabled_user disabled_domain disabled_by dc
+| sort - time
